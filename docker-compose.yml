@@ -1,0 +1,31 @@
+services:
+  selenoid:
+    image: aerokube/selenoid:1.11.3
+    environment:
+      DOCKER_API_VERSION: "1.44"
+    ports:
+      - "127.0.0.1:4444:4444"
+    volumes:
+      - ./selenoid/browsers.json:/etc/selenoid/browsers.json:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["-conf", "/etc/selenoid/browsers.json", "-container-network", "sprint9-selenoid", "-limit", "2"]
+    networks:
+      - selenoid
+
+  tests:
+    build: .
+    depends_on:
+      - selenoid
+    environment:
+      SELENOID_URL: http://selenoid:4444/wd/hub
+      BROWSER_VERSION: "128.0"
+      BASE_URL: ${BASE_URL:-https://foodgram-frontend-1.foodgram.education-services.ru}
+      API_URL: ${API_URL:-https://foodgram-backend-1.foodgram.education-services.ru}
+    volumes:
+      - ./allure-results:/app/allure-results
+    networks:
+      - selenoid
+
+networks:
+  selenoid:
+    name: sprint9-selenoid
