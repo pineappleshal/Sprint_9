@@ -1,0 +1,11 @@
+{
+  "name": "Sprint_9 — Продуктовый помощник",
+  "output": "allure-report",
+  "plugins": {
+    "awesome": {
+      "options": {
+        "singleFile": true
+      }
+    }
+  }
+}

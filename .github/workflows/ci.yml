@@ -1,0 +1,51 @@
+name: Foodgram tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore: ['README.md', 'docs/**', 'allure-report/**']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['README.md', 'docs/**', 'allure-report/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Pull Chrome and Selenoid images
+        run: |
+          docker pull selenoid/chrome:128.0
+          docker compose pull selenoid
+      - name: Start Selenoid
+        run: |
+          docker compose up -d selenoid
+          curl --fail --retry 20 --retry-all-errors --retry-delay 1 http://localhost:4444/status
+      - name: Run tests in Docker
+        run: docker compose up --build --exit-code-from tests tests
+      - name: Set up Node.js for Allure
+        if: always()
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Generate Allure report
+        if: always()
+        run: npx --yes allure@3.33.0 generate allure-results --output allure-report
+      - name: Save report and test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          path: |
+            allure-report/
+            allure-results/
+          retention-days: 14
+      - name: Stop containers
+        if: always()
+        run: docker compose down
